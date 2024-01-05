@@ -107,7 +107,8 @@ triple = coincidenze(tempi_canale_3, tempi_canale_1, tempi_canale_2)
 #np.savetxt('/home/chris/SciamiEstesi/SciamiCoincidenza/coincidenze_triple.txt', v, fmt='%.8f')
 runnumber=231123
 np.savetxt(f'/home/chris/SciamiEstesi/23_11_2023/data/concidence_data/coincidenze_doppie23_{runnumber}.txt', doppie, fmt='%.8f')
-np.savetxt(f'/home/chris/SciamiEstesi/23_11_2023/data/concidence_data/coincidenze_triple_{runnumber}.txt', triple, fmt='%.8f')
+triple_array = np.array(triple)  # Converti la lista di tuple in un array numpy
+np.savetxt(f'/home/chris/SciamiEstesi/23_11_2023/data/concidence_data/coincidenze_triple_{runnumber}.txt', triple_array[:, 0], fmt='%.8f')
 
 
 # Registra il timestamp finale

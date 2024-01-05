@@ -250,6 +250,7 @@ void plotTimeDifferences(const char* filePath,  const char* outputFileName, cons
 }
 
 int analisi(){
+
     //CANALE1
     const char* filePath1 = "/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_canale_1_231123.txt"; 
     plot_histogram(filePath1, "output_canale1", "1");
@@ -262,6 +263,9 @@ int analisi(){
     const char* filePath3 = "/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_canale_3_231123.txt"; 
     plot_histogram(filePath3, "output_canale3", "3");
     plotTimeDifferences(filePath3, "output_canale_3", "3");
+    //COINCIDENZE TUTTI I CANALI 123
+    const char* filePathCoinc = "/home/chris/SciamiEstesi/23_11_2023/data/concidence_data/coincidenze_triple_231123.txt"; 
+    plot_histogram(filePathCoinc, "output_canale123", "123");
 
 
     return 0;
