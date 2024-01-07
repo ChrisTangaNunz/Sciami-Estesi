@@ -4,7 +4,9 @@
 #include <cmath>
 #include "TH1F.h"
 #include "TCanvas.h"
+#include "TStyle.h"
 #include "TGraphErrors.h"
+#include <TPaveStats.h>
 
 std::vector<double> loadFiles(const char* filePath){
     // Vettore per memorizzare i tempi
@@ -36,29 +38,64 @@ void createErrorGraph(const TH1F* histogram, const char* outputFileName, const c
     std::vector<double> timesVec;
     std::vector<double> rates;
     std::vector<double> errors;
+    std::vector<double> timeErrors;
+
 
     for (int i = 1; i <= histogram->GetNbinsX(); ++i) {
         double binContent = histogram->GetBinContent(i);
         double binWidth = histogram->GetBinWidth(i);
         double rate = binContent / binWidth;
         double error = std::sqrt(binContent) / binWidth;
+        double err_x = binWidth / std::sqrt(12.0);
 
         timesVec.push_back(histogram->GetBinCenter(i));
         rates.push_back(rate);
         errors.push_back(error);
+        timeErrors.push_back(err_x);
+
     }
 
     // Crea il grafico a errori
-    TGraphErrors graphErrors(timesVec.size(), &timesVec[0], &rates[0], 0, &errors[0]);
+    TGraphErrors graphErrors(timesVec.size(), &timesVec[0], &rates[0], &timeErrors[0], &errors[0]);
 
     // Imposta gli stili del grafico a errori
     graphErrors.SetMarkerStyle(20);
-    graphErrors.SetMarkerSize(1.5);
+    graphErrors.SetMarkerSize(0.01);
     graphErrors.SetTitle("Rate vs Tempi;Tempi [s];Rate [Hz]");
+    // Calcola la media dei valori sull'asse y del grafico
+    double meanY = 0.0;
+    double err_meanY=0.0;
+    for (size_t i = 0; i < rates.size(); ++i) {
+        meanY += rates[i];
+        err_meanY += errors[i];
+    }
+    meanY /= rates.size();
+    err_meanY /= errors.size();
 
     // Crea un canvas per il grafico a errori
     TCanvas canvasError("canvasError", "Grafico Rate vs Tempi", 800, 600);
+    canvasError.cd();  // Sposta il contesto all'interno del canvas
+
     graphErrors.Draw("AP");
+    // Aggiungi una linea tratteggiata corrispondente al rate medio
+    TLine* meanLine = new TLine(graphErrors.GetXaxis()->GetXmin(), meanY, graphErrors.GetXaxis()->GetXmax(), meanY);
+    meanLine->SetLineStyle(2);  // Imposta la linea come tratteggiata
+    meanLine->SetLineColor(kRed);  // Imposta il colore della linea
+    meanLine->Draw("same");  // Disegna la linea sullo stesso grafico
+
+
+    // Aggiungi il box statistico
+    TPaveStats* stats = new TPaveStats(0.7, 0.8, 0.9, 0.9, "NDC");
+    stats->SetName("stats");
+    stats->SetBorderSize(1);
+    stats->SetFillColor(0);
+    stats->SetTextAlign(12);
+    stats->SetTextSize(0.025);
+    stats->AddText(Form(("Rate medio [Hz]:")));
+    stats->AddText(Form("%.2f $\\pm$ %.2f$", meanY, err_meanY));
+    canvasError.Modified();  // Necessario per rendere effettive le modifiche al canvas
+    canvasError.Update();    // Aggiorna il canvas
+    stats->Draw("same");     // Disegna il box statistico sopra il grafico
 
     // Salva il canvas
     canvasError.SaveAs(Form("/home/chris/SciamiEstesi/23_11_2023/plots/channel_%s/%s_Rate.png", channel,outputFileName));
@@ -80,26 +117,22 @@ void plot_histogram2D(const TH1F* histogram, const char* outputFileName, const c
         double rate = binContent / binWidth;
 
         histogram2D->Fill(histogram->GetBinCenter(i), rate);
-
         times2D.push_back(histogram->GetBinCenter(i));
         rates2D.push_back(rate);
-  
-
     }
+
     TCanvas *canvas2D = new TCanvas("canvas2D", "Istogramma 2D", 800, 600);
     histogram2D->Draw("colz");
-
-
-
-    // Posiziona il box statistics in modo che non copra la scala dell'asse Z
+    // Posiziona il box statistics in modo che non copra la scala dell'asse Z per l'istogramma 2D
     gPad->Update();
-    TPaveStats *stats = (TPaveStats*)histogram2D->FindObject("stats");
-    stats->SetX1NDC(0.68);
-    stats->SetX2NDC(0.88);
-    stats->SetY1NDC(0.78);
-    stats->SetY2NDC(0.98);
+    TPaveStats *stats2D = (TPaveStats*)histogram2D->FindObject("stats");
+    stats2D->SetX1NDC(0.68);
+    stats2D->SetX2NDC(0.88);
+    stats2D->SetY1NDC(0.78);
+    stats2D->SetY2NDC(0.98);
 
     canvas2D->SaveAs(Form("/home/chris/SciamiEstesi/23_11_2023/plots/channel_%s/%s_2D.png",channel, outputFileName));
+
 
 
 }
@@ -142,7 +175,7 @@ void plot_histogram(const char* filePath, const char* outputFileName, const char
     }
 
     double lastValue = time.back();
-    const double binWidth = 10;
+    const double binWidth = 3600;
     const int numBins = static_cast<int>(std::ceil(lastValue / binWidth));
 
     TH1F histogram("histogram", "Histogram", numBins, 0., lastValue);
