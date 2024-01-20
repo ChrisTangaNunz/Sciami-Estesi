@@ -35,7 +35,7 @@ def correzione_dati2(tempi):
 
 # Caricamento dati
 runnumber=231123
-channel, time = np.loadtxt("/home/chris/SciamiEstesi/23_11_2023/data/231123test2.dat", unpack=True)
+channel, time = np.loadtxt("/home/chris/SciamiEstesiCOPIA/23_11_2023/data/231123test2.dat", unpack=True)
 
 
 
@@ -47,12 +47,12 @@ tempi_canale_1 = time[channel == 1]
 tempi_canale_2 = time[channel == 2]
 tempi_canale_3 = time[channel == 3]
 
-#np.savetxt('//home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_tot.txt', time)
+np.savetxt('//home/chris/SciamiEstesiCOPIA/23_11_2023/data/clean_data/tempi_corretti__pyTOTALE.txt', time)
 
 # Salvataggio dei tempi corretti per ogni canale
-np.savetxt(f'/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_canale_1_{runnumber}.txt', tempi_canale_1, fmt='%.8f')
-np.savetxt(f'/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_canale_2_{runnumber}.txt', tempi_canale_2, fmt='%.8f')
-np.savetxt(f'/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_canale_3_{runnumber}.txt', tempi_canale_3, fmt='%.8f')
+np.savetxt(f'/home/chris/SciamiEstesiCOPIA/23_11_2023/data/clean_data/tempi_corretti_canale_1_{runnumber}.txt', tempi_canale_1, fmt='%.8f')
+np.savetxt(f'/home/chris/SciamiEstesiCOPIA/23_11_2023/data/clean_data/tempi_corretti_canale_2_{runnumber}.txt', tempi_canale_2, fmt='%.8f')
+np.savetxt(f'/home/chris/SciamiEstesiCOPIA/23_11_2023/data/clean_data/tempi_corretti_canale_3_{runnumber}.txt', tempi_canale_3, fmt='%.8f')
 '''
 plt.scatter(range(len(tempi_canale_1)), tempi_canale_1, label='Canale 1')
 plt.scatter(range(len(tempi_canale_2)), tempi_canale_2, label='Canale 2')

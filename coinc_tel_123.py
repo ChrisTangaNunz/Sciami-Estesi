@@ -70,14 +70,16 @@ def coincidenze_doppie( telescopio_master, telescopio2):
     t1_min = 50e-9
     t2_max = 200e-9
     t2_min = 150e-9
+    t3_max = 150e-9
+    t3_min = 80e-9 
 
 
     coincidenze=[]
     
     for i in range(len(telescopio_master)):
-        while (telescopio2[j] < telescopio_master[i]+ t2_min  and j<len1): 
+        while (telescopio2[j] < telescopio_master[i]+ t3_min  and j<len1): 
             j+=1            
-        if telescopio2[j] < telescopio_master[i]+ t2_max:
+        if telescopio2[j] < telescopio_master[i]+ t3_max:
             coincidenze.append((telescopio_master[i], telescopio2[j]))
             j+=1
                
@@ -96,18 +98,19 @@ def coincidenze_doppie( telescopio_master, telescopio2):
 
 
 
-tempi_canale_1 = np.loadtxt("/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_canale_1_231123.txt")
-tempi_canale_2 = np.loadtxt("/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_canale_2_231123.txt")
-tempi_canale_3 = np.loadtxt("/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_canale_3_231123.txt")
+tempi_canale_1 = np.loadtxt("/home/chris/SciamiEstesiCOPIA/23_11_2023/data/clean_data/tempi_corretti_canale_1_231123.txt")
+tempi_canale_2 = np.loadtxt("/home/chris/SciamiEstesiCOPIA/23_11_2023/data/clean_data/tempi_corretti_canale_2_231123.txt")
+tempi_canale_3 = np.loadtxt("/home/chris/SciamiEstesiCOPIA/23_11_2023/data/clean_data/tempi_corretti_canale_3_231123.txt")
 
 #v = coincidenze(tempi_canale_3, tempi_canale_1, tempi_canale_2)
-doppie = coincidenze_doppie(tempi_canale_3, tempi_canale_2)
+doppie = coincidenze_doppie(tempi_canale_2, tempi_canale_1)
 triple = coincidenze(tempi_canale_3, tempi_canale_1, tempi_canale_2)
 
-#np.savetxt('/home/chris/SciamiEstesi/SciamiCoincidenza/coincidenze_triple.txt', v, fmt='%.8f')
+#np.savetxt('/home/chris/SciamiEstesiCOPIA/SciamiCoincidenza/coincidenze_triple.txt', v, fmt='%.8f')
 runnumber=231123
-np.savetxt(f'/home/chris/SciamiEstesi/23_11_2023/data/concidence_data/coincidenze_doppie23_{runnumber}.txt', doppie, fmt='%.8f')
-np.savetxt(f'/home/chris/SciamiEstesi/23_11_2023/data/concidence_data/coincidenze_triple_{runnumber}.txt', triple, fmt='%.8f')
+np.savetxt(f'/home/chris/SciamiEstesiCOPIA/23_11_2023/data/concidence_data/coincidenze_doppie12_{runnumber}.txt', doppie, fmt='%.8f')
+triple_array = np.array(triple)  # Converti la lista di tuple in un array numpy
+np.savetxt(f'/home/chris/SciamiEstesiCOPIA/23_11_2023/data/concidence_data/coincidenze_triple_{runnumber}.txt', triple_array[:, 0], fmt='%.8f')
 
 
 # Registra il timestamp finale
@@ -116,3 +119,7 @@ end_time = time.time()
 # Calcola la differenza e stampa il tempo di esecuzione
 execution_time = end_time - start_time
 print(f"Tempo di esecuzione: {execution_time} secondi")
+
+print(len(tempi_canale_3))
+print(len(tempi_canale_2))
+print(len(tempi_canale_1))
