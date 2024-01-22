@@ -1,5 +1,4 @@
 #include <iostream>
-#include <string>
 #include <fstream>
 #include <vector>
 #include <cmath>
@@ -36,7 +35,7 @@ std::vector<double> loadFiles(const char* filePath){
 
 
 
-void createErrorGraph(const TH1F* histogram, const char* output_file) {
+void createErrorGraph(const TH1F* histogram, const char* channel) {
     // Crea vettori per i dati del grafico a errori
     std::vector<double> timesVec;
     std::vector<double> bins_Content;
@@ -125,10 +124,10 @@ void createErrorGraph(const TH1F* histogram, const char* output_file) {
     stats->Draw("same");     // Disegna il box statistico sopra il grafico
 
     // Salva il canvas
-    canvasError.SaveAs(output_file);
+    canvasError.SaveAs(Form("/home/chris/SciamiEstesi/23_11_2023/plots/channel_%s/Rate.png", channel));
 }
 
-void plot_histogram2D(const TH1F* histogram, const char* output_file){
+void plot_histogram2D(const TH1F* histogram, const char* channel){
 
     std::vector<double> times2D;
     std::vector<double> rates2D;
@@ -157,13 +156,13 @@ void plot_histogram2D(const TH1F* histogram, const char* output_file){
     stats2D->SetY1NDC(0.78);
     stats2D->SetY2NDC(0.98);
 
-    canvas2D->SaveAs(output_file);
+    canvas2D->SaveAs(Form("/home/chris/SciamiEstesi/23_11_2023/plots/channel_%s/histogram2D.png", channel));
 
 
 
 }
 
-void plotHistogram_Rate(const TH1F* histogram, const char* output_file) {
+void plotHistogram_Rate(const TH1F* histogram, const char* channel) {
 
     TH1F *rateHistogram = new TH1F("rateHistogram", "Istogramma del Rate;Conteggi;Occorrenze", 100, 0, 200);
     for (int i = 1; i <= histogram->GetNbinsX(); ++i) {
@@ -181,7 +180,7 @@ void plotHistogram_Rate(const TH1F* histogram, const char* output_file) {
     // Disegna l'istogramma del rate
     rateHistogram->Draw();
 
-    canvasRate->SaveAs(output_file);
+    canvasRate->SaveAs(Form("/home/chris/SciamiEstesi/23_11_2023/plots/channel_%s/RateHistogram.png", channel));
 
 
     // Estrai i parametri del fit
@@ -193,7 +192,7 @@ void plotHistogram_Rate(const TH1F* histogram, const char* output_file) {
 }
 
 
-void plot_histogram(const char* filePath, const char* output_file) {
+void plot_histogram(const char* filePath, const char* channel) {
     std::vector<double> time = loadFiles(filePath);
     if (time.empty()) {
         std::cerr << "Nessun dato da caricare. Uscita." << std::endl;
@@ -220,11 +219,11 @@ void plot_histogram(const char* filePath, const char* output_file) {
 
     // Mostra il canvas
     canvasH1.Draw();
-    canvasH1.SaveAs(output_file);
+    canvasH1.SaveAs(Form("/home/chris/SciamiEstesi/23_11_2023/plots/channel_%s/histogram1D.png", channel));
 
-    createErrorGraph(&histogram,   output_file);
-    plot_histogram2D(&histogram,   output_file);
-    plotHistogram_Rate(&histogram, output_file);
+    createErrorGraph(&histogram, channel);
+    plot_histogram2D(&histogram, channel);
+    plotHistogram_Rate(&histogram, channel);
 }
 
 
@@ -246,7 +245,7 @@ void calculateTimeDifferences(const char* filePath, std::vector<double>& timeDif
 
 
 
-void plotTimeDifferences(const char* filePath, const char* output_file) {
+void plotTimeDifferences(const char* filePath, const char* channel) {
     std::vector<double> timeDifferences;
     calculateTimeDifferences(filePath, timeDifferences);
 
@@ -283,7 +282,7 @@ void plotTimeDifferences(const char* filePath, const char* output_file) {
     TCanvas *canvasTimeDifferences = new TCanvas("canvasTimeDifferences", "Istogramma delle differenze di tempo", 800, 600);
     timeDifferenceHistogram->Draw();
 
-    canvasTimeDifferences->SaveAs(output_file);
+    canvasTimeDifferences->SaveAs(Form("/home/chris/SciamiEstesi/23_11_2023/plots/channel_%s/TimeDifferences.png", channel));
     // Crea un secondo canvas con scala logaritmica per l'asse delle y
     TCanvas *canvasLogScale = new TCanvas("canvasLogScale", "Istogramma con scala logaritmica", 800, 600);
     gPad->SetLogy();
@@ -304,13 +303,13 @@ void plotTimeDifferences(const char* filePath, const char* output_file) {
     std::cout << "Fit Decay (log scale): " << fitDecayLogScale << std::endl;
 
 
-    canvasLogScale->SaveAs(output_file);
+    canvasLogScale->SaveAs(Form("/home/chris/SciamiEstesi/23_11_2023/plots/channel_%s/TimeDifferences_LogScale.png", channel));
 
 }
 
 
 
-void calculateAndPlotDiffCoinc(const char* fileName, const char* output_file) {
+void calculateAndPlotDiffCoinc(const char* fileName, const char* channel) {
     // Apri il file
     std::ifstream file(fileName);
 
@@ -358,7 +357,7 @@ void calculateAndPlotDiffCoinc(const char* fileName, const char* output_file) {
     histogramCoinc->Draw("HIST");
 
     // Salva il canvas
-    canvas->SaveAs(output_file);
+    canvas->SaveAs(Form("/home/chris/SciamiEstesi/23_11_2023/plots/channel_%s/DiffCoincDoppie.png", channel));
 
     delete histogramCoinc;
     delete canvas;
@@ -366,7 +365,7 @@ void calculateAndPlotDiffCoinc(const char* fileName, const char* output_file) {
 }
 
 
-void plot_RatevsParameter(const char* filePath, const char* outputName, const char* parameterName, const char* output_file) {
+void plot_RatevsParameter(const char* filePath, const char* parameterName, const char* channel) {
     // Disabilita la casella delle statistiche di default
     //gStyle->SetOptFit(0);
     // Regola le dimensioni della casella delle statistiche
@@ -392,7 +391,7 @@ void plot_RatevsParameter(const char* filePath, const char* outputName, const ch
 
     infile.close();
     // Creazione di un TCanvas per il plot
-    TCanvas *canvas = new TCanvas(outputName, Form("Rates vs %s", parameterName), 800, 600);
+    TCanvas *canvas = new TCanvas("Canvas", Form("Rates vs %s", parameterName), 800, 600);
     canvas->SetGrid();
 
     // Creazione di un TGraphErrors per lo scatter plot
@@ -430,7 +429,7 @@ void plot_RatevsParameter(const char* filePath, const char* outputName, const ch
 
 
     // Salva il canvas come immagine
-    canvas->SaveAs(output_file);
+    canvas->SaveAs(Form("/home/chris/SciamiEstesi/23_11_2023/plots/parametri_atmosferici/%s/channel_%s/channel%s.png", parameterName, channel, channel));
     // Rilascia la memoria
     delete linearFit;
     delete graph;
@@ -438,73 +437,64 @@ void plot_RatevsParameter(const char* filePath, const char* outputName, const ch
 
 }
 
-
 int analisi(){
-    string folder= "23_11_2023/";
-    string files[] = {
-        "clean_data/tempi_corretti_canale_1_231123.txt",
-        "clean_data/tempi_corretti_canale_2_231123.txt",
-        "clean_data/tempi_corretti_canale_3_231123.txt"
+    const char* files[] = {
+        "/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_canale_1_231123.txt",
+        "/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_canale_2_231123.txt",
+        "/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_canale_3_231123.txt"
     };
 
-    std::string inputFileName = folder + "data/"; 
-    std::string outputFileName = folder + "plots/"; 
-
     for (int i = 0; i < 3; i++) {
-        std::string in = inputFileName + files[i];
-        std::string out = outputFileName + files[i];
-
-        std::cout << out << std::endl;
 
         // Chiamare le funzioni con le stringhe risultanti
-        plot_histogram(in.c_str(),out.c_str());
-        plotTimeDifferences(in.c_str(),out.c_str());
+        plot_histogram(files[i], std::to_string(i + 1).c_str());
+        plotTimeDifferences(files[i], std::to_string(i + 1).c_str());
     }
-/*
     //COINCIDENZE TELESCOPI 123
-    const char* filePathCoinc123 = "23_11_2023/data/concidence_data/coincidenze_triple_231123.txt"; 
+    const char* filePathCoinc123 = "/home/chris/SciamiEstesi/23_11_2023/data/concidence_data/coincidenze_triple_231123.txt"; 
     plot_histogram(filePathCoinc123, "123");
     //COINCIDENZE DUE TELESCOPI 23
-    const char* filePathCoinc23 = "23_11_2023/data/concidence_data/coincidenze_doppie23_231123.txt"; 
+    const char* filePathCoinc23 = "/home/chris/SciamiEstesi/23_11_2023/data/concidence_data/coincidenze_doppie23_231123.txt"; 
     plot_histogram(filePathCoinc23, "23");
     calculateAndPlotDiffCoinc(filePathCoinc23, "23");
     //COINCIDENZE DUE TELESCOPI 13
-    const char* filePathCoinc13 = "23_11_2023/data/concidence_data/coincidenze_doppie13_231123.txt"; 
+    const char* filePathCoinc13 = "/home/chris/SciamiEstesi/23_11_2023/data/concidence_data/coincidenze_doppie13_231123.txt"; 
     plot_histogram(filePathCoinc13, "13");
     calculateAndPlotDiffCoinc(filePathCoinc13, "13");
     // PARAMETRI ATMOFERICI
         //TEMPERATURA
             //CANALE1
-    const char* filePathTemperature_ch1 = "23_11_2023/data/parametri_atmosferici/temperatura/canale_1_231123/Rates_and_temperatura_canale_1_231123.txt";
-    plot_RatevsParameter(filePathTemperature_ch1, "output_Temperatura", "temperatura", "1");
+    const char* filePathTemperature_ch1 = "/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/temperatura/canale_1_231123/Rates_and_temperatura_canale_1_231123.txt";
+    plot_RatevsParameter(filePathTemperature_ch1, "temperatura", "1");
             //CANALE2
-    const char* filePathTemperature_ch2 = "23_11_2023/data/parametri_atmosferici/temperatura/canale_2_231123/Rates_and_temperatura_canale_2_231123.txt";
-    plot_RatevsParameter(filePathTemperature_ch2, "output_Temperatura", "temperatura", "2");
+    const char* filePathTemperature_ch2 = "/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/temperatura/canale_2_231123/Rates_and_temperatura_canale_2_231123.txt";
+    plot_RatevsParameter(filePathTemperature_ch2, "temperatura", "2");
             //CANALE3
-    const char* filePathTemperature_ch3 = "23_11_2023/data/parametri_atmosferici/temperatura/canale_3_231123/Rates_and_temperatura_canale_3_231123.txt";
-    plot_RatevsParameter(filePathTemperature_ch3, "output_Temperatura", "temperatura", "3");   
+    const char* filePathTemperature_ch3 = "/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/temperatura/canale_3_231123/Rates_and_temperatura_canale_3_231123.txt";
+    plot_RatevsParameter(filePathTemperature_ch3, "temperatura", "3");   
 
         //PRESSIONE
             //CANALE1
-    const char* filePathPressure_ch1 = "23_11_2023/data/parametri_atmosferici/pressione/canale_1_231123/Rates_and_pressione_canale_1_231123.txt";
-    plot_RatevsParameter(filePathPressure_ch1, "output_pressione", "pressione", "1");
+    const char* filePathPressure_ch1 = "/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/pressione/canale_1_231123/Rates_and_pressione_canale_1_231123.txt";
+    plot_RatevsParameter(filePathPressure_ch1, "pressione", "1");
             //CANALE2
-    const char* filePathPressure_ch2 = "23_11_2023/data/parametri_atmosferici/pressione/canale_2_231123/Rates_and_pressione_canale_2_231123.txt";
-    plot_RatevsParameter(filePathPressure_ch2, "output_pressione", "pressione", "2");
+    const char* filePathPressure_ch2 = "/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/pressione/canale_2_231123/Rates_and_pressione_canale_2_231123.txt";
+    plot_RatevsParameter(filePathPressure_ch2, "pressione", "2");
             //CANALE3
-    const char* filePathPressure_ch3 = "23_11_2023/data/parametri_atmosferici/pressione/canale_3_231123/Rates_and_pressione_canale_3_231123.txt";
-    plot_RatevsParameter(filePathPressure_ch3, "output_pressione", "pressione", "3");
+    const char* filePathPressure_ch3 = "/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/pressione/canale_3_231123/Rates_and_pressione_canale_3_231123.txt";
+    plot_RatevsParameter(filePathPressure_ch3, "pressione", "3");
  
         //UMIDITA'
             //CANALE1
-    const char* filePathHumidity_ch1 = "23_11_2023/data/parametri_atmosferici/umidità/canale_1_231123/Rates_and_umidità_canale_1_231123.txt";
-    plot_RatevsParameter(filePathHumidity_ch1, "output_Humidity", "umidità", "1");
+    const char* filePathHumidity_ch1 = "/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/umidità/canale_1_231123/Rates_and_umidità_canale_1_231123.txt";
+    plot_RatevsParameter(filePathHumidity_ch1, "umidità", "1");
             //CANALE2
-    const char* filePathHumidity_ch2 = "23_11_2023/data/parametri_atmosferici/umidità/canale_2_231123/Rates_and_umidità_canale_2_231123.txt";
-    plot_RatevsParameter(filePathHumidity_ch2, "output_Humidity", "umidità", "2");
+    const char* filePathHumidity_ch2 = "/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/umidità/canale_2_231123/Rates_and_umidità_canale_2_231123.txt";
+    plot_RatevsParameter(filePathHumidity_ch2, "umidità", "2");
             //CANALE3
+    const char* filePathHumidity_ch3 = "/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/umidità/canale_3_231123/Rates_and_umidità_canale_3_231123.txt";
+    plot_RatevsParameter(filePathHumidity_ch3, "umidità", "3");
 
 
-*/
     return 0;
 }
