@@ -10,7 +10,7 @@ import matplotlib.dates as mdates
 def process_atmospheric_parameter(parametro, channel_date, colonna):
     
     # Carica i dati dei tempi
-    file_path_tempi_TOT = '/home/chris/SciamiEstesiCOPIA/23_11_2023/data/clean_data/tempi_corretti__TOTALE.txt'
+    file_path_tempi_TOT = '/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti__TOTALE.txt'
     df_tempi_TOT = pd.read_csv(file_path_tempi_TOT, header=None, names=['tempi'])
     ultimo_valore = df_tempi_TOT.iloc[-1, 0]
 
@@ -37,7 +37,7 @@ def process_atmospheric_parameter(parametro, channel_date, colonna):
 
 
     # Crea una colonna con i timestamp utilizzando l'ora esatta di inizio acquisizione
-    file_path_tempi_channel = f'/home/chris/SciamiEstesiCOPIA/23_11_2023/data/clean_data/tempi_corretti_{channel_date}.txt'
+    file_path_tempi_channel = f'/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_{channel_date}.txt'
     df_tempi_channel = pd.read_csv(file_path_tempi_channel, header=None, names=['tempi'])
     df_tempi_channel['timestamp'] = data_ora_inizio_acquisizione + pd.to_timedelta(df_tempi_channel['tempi'], unit='s')
     #pdb.set_trace() per debugging
@@ -46,7 +46,7 @@ def process_atmospheric_parameter(parametro, channel_date, colonna):
     df_tempi_channel = df_tempi_channel[df_tempi_channel['timestamp'] < datetime(2023, 11, 26, 22, 55)]
 
     # Carica i dati dal file
-    data_parametri = np.loadtxt("/home/chris/SciamiEstesiCOPIA/23_11_2023/data/parametri_atmosferici/2023-11-27_downld08.txt", usecols=(0, 1, colonna), dtype=str)
+    data_parametri = np.loadtxt("/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/2023-11-27_downld08.txt", usecols=(0, 1, colonna), dtype=str)
 
     # Creazione di un DataFrame 'df_parametri' utilizzando i dati dalla variabile 'data_parametri'
     # Le colonne del DataFrame saranno etichettate come 'data', 'ora', e 'temperatura'
@@ -81,7 +81,7 @@ def process_atmospheric_parameter(parametro, channel_date, colonna):
 
     # Dati
     df_combined['timestamp'] = pd.to_datetime(df_combined['timestamp'])
-
+    print(df_combined)
     #tempi = df_combined['tempi']
     #temperature = df_combined['temperatura']
     # Imposta l'inizio del primo bin come l'ora di inizio acquisizione
@@ -114,7 +114,7 @@ def process_atmospheric_parameter(parametro, channel_date, colonna):
 
     # Stampa i timestamp più vicini e le relative temperature
     for bin_center, ora, par in zip(bin_centers, nearest_ora_values, parametro_values):
-        print(f"Timestamp più vicino: {bin_center}, Ora associata: {ora}, {parametro} : {par}")
+        #print(f"Timestamp più vicino: {bin_center}, Ora associata: {ora}, {parametro} : {par}")
         # Aggiungi la temperatura associata al vettore
         parametro_ass.append(par)
     '''
@@ -144,11 +144,15 @@ def process_atmospheric_parameter(parametro, channel_date, colonna):
     df_export = pd.DataFrame({parametro: parametro_ass, 'Rate': rates})
 
     # Salva il DataFrame in un file di testo
-    output_txt_path = f'/home/chris/SciamiEstesiCOPIA/23_11_2023/data/parametri_atmosferici/{parametro}/{channel_date}/Rates_and_{parametro}_{channel_date}.txt'
+    output_txt_path = f'/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/{parametro}/{channel_date}/Rates_and_{parametro}_{channel_date}.txt'
     df_export.to_csv(output_txt_path, sep='\t', index=False, header=False)
+    plt.scatter(df_combined['ora'], df_combined[parametro], alpha=0.5)
+    plt.show()
+
 
 parametro_da_processare = 'umidità'
 channel_date = 'canale_3_231123'
 colonna = 5 #colonna 2 = temperatura; colonna 5 = umidità; colonna 16 = pressione
 process_atmospheric_parameter(parametro_da_processare, channel_date, colonna)
+
 

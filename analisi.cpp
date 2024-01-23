@@ -200,7 +200,7 @@ void plot_histogram(const char* filePath, const char* channel) {
     }
 
     double lastValue = time.back();
-    const double binWidth = 3600;
+    const double binWidth = 10;
     const int numBins = static_cast<int>(std::ceil(lastValue / binWidth));
 
     TH1F histogram("histogram", "Histogram", numBins, 0., lastValue);

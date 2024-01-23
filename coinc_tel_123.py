@@ -47,10 +47,10 @@ def coincidenze(telescopio_master, telescopio1, telescopio2):
     coincidenze=[]
     
     for i in range(len(telescopio_master)):
-        while ( telescopio1[j] < telescopio_master[i]+ t1_min  and j<len1): 
+        while ( j<len1 and telescopio1[j] < telescopio_master[i]+ t1_min): 
             j+=1
         if telescopio1[j] < telescopio_master[i]+ t1_max:
-            while ( telescopio2[k] < telescopio_master[i]+ t2_min  and k<len2): 
+            while ( k<len2 and telescopio2[k] < telescopio_master[i]+ t2_min ): 
                 k+=1
             if telescopio2[k] < telescopio_master[i]+ t2_max:
                 coincidenze.append((telescopio_master[i], telescopio1[j], telescopio2[k]))
@@ -77,7 +77,7 @@ def coincidenze_doppie( telescopio_master, telescopio2):
     coincidenze=[]
     
     for i in range(len(telescopio_master)):
-        while (telescopio2[j] < telescopio_master[i]+ t3_min  and j<len1): 
+        while (j<len1 and telescopio2[j] < telescopio_master[i]+ t3_min ): 
             j+=1            
         if telescopio2[j] < telescopio_master[i]+ t3_max:
             coincidenze.append((telescopio_master[i], telescopio2[j]))

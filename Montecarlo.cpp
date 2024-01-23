@@ -36,10 +36,14 @@ void coincidenza_doppia12(int n, double Lu1, double La, double spessore, double 
     double S1=La*Lu1;
     double S2=La*Lu2;
     TRandomMixMax randomGenerator;
+    /*
     TH1F *histogram= new TH1F("histogram","titlevero.c_str()",100, -1,2);
   
     new TCanvas;
     TH2F * ProbabilityDensity= new TH2F("Probability Density2","Density of Probability2",100,-3.14/2,3.14/2,100,-1,2);
+   
+    */
+   
     double tentativi=0, successi=0, brutti=0;
     for(int i=0; i<n; i++){
         
@@ -70,7 +74,8 @@ void coincidenza_doppia12(int n, double Lu1, double La, double spessore, double 
 
 int Montecarlo(){
 
-    coincidenza_doppia12(10000, 40.1, 48.1, 1.2, 40.1, 39.1);
+    coincidenza_doppia12(10000000, 42.2, 19.8, 1.5, 60, 1.8); //Lunghezza scintillatore 1, Larghezza scintillatore 2, spessore scintillatore, lunghezza scintillatore 2, altezza (distanza tra i due scinitllatori)
+
     return 0; 
 
 }
