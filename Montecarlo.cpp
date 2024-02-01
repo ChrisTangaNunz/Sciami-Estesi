@@ -74,7 +74,7 @@ void coincidenza_doppia12(int n, double Lu1, double La, double spessore, double 
 
 int Montecarlo(){
 
-    coincidenza_doppia12(10000000, 42.2, 19.8, 1.5, 60, 1.8); //Lunghezza scintillatore 1, Larghezza scintillatore 2, spessore scintillatore, lunghezza scintillatore 2, altezza (distanza tra i due scinitllatori)
+    coincidenza_doppia12(100, 52, 39.5, 1.5, 52.2, 16.3); //n iterazioni, Lunghezza scintillatore 1, Larghezza scintillatore 2, spessore scintillatore, lunghezza scintillatore 2, altezza (distanza tra i due scinitllatori)
 
     return 0; 
 

@@ -169,6 +169,10 @@ void plotHistogram_Rate(const TH1F* histogram, const char* channel) {
         double binContent = histogram->GetBinContent(i);
         rateHistogram->Fill(binContent);
     }
+
+    //Imposta correttamente il range dell'asse x
+    //rateHistogram->GetXaxis()->SetRangeUser(100, 200);
+
     // Fai il fit della distribuzione poissoniana
     TF1 *poissonFit = new TF1("poissonFit", "[0]*TMath::Poisson(x, [1])", 0, 200);
     poissonFit->SetParameters(10, 10);  // Parametri iniziali per il fit
@@ -461,6 +465,7 @@ int analisi(){
     const char* filePathCoinc13 = "/home/chris/SciamiEstesi/23_11_2023/data/concidence_data/coincidenze_doppie13_231123.txt"; 
     plot_histogram(filePathCoinc13, "13");
     calculateAndPlotDiffCoinc(filePathCoinc13, "13");
+
     // PARAMETRI ATMOFERICI
         //TEMPERATURA
             //CANALE1
@@ -494,7 +499,6 @@ int analisi(){
             //CANALE3
     const char* filePathHumidity_ch3 = "/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/umidità/canale_3_231123/Rates_and_umidità_canale_3_231123.txt";
     plot_RatevsParameter(filePathHumidity_ch3, "umidità", "3");
-
-
+    std::cout<<"TERMINAZIONE SCRIPT"<<std::endl;
     return 0;
 }
