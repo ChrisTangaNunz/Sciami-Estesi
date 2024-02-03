@@ -432,7 +432,7 @@ void plot_RatevsParameter(const char* filePath, const char* parameterName, const
         // Se il parametro non corrisponde a nessuno dei precedenti, imposta un titolo generico
         graph->GetXaxis()->SetTitle(Form("%s", parameterName));
     }
-    graph->GetYaxis()->SetRangeUser(14.4, 16.2);
+    graph->GetYaxis()->SetRangeUser(14.4, 16.3);
 
 
     // Disegna lo scatter plot
@@ -508,7 +508,7 @@ void plot_CorrectedRatevsParameter(const char* filePath, const char* parameterNa
     graph->SetMarkerStyle(20);
     graph->SetMarkerSize(0.25);
     graph->SetMarkerColor(kBlue);
-    graph->SetTitle(Form("Corrected rates vs %s", parameterName));
+    graph->SetTitle(Form("Rates corretti vs %s", parameterName));
     graph->GetYaxis()->SetTitle("Rate [Hz]");
     // Imposta il titolo sull'asse x in base al tipo di parametro
     if (strcmp(parameterName, "temeperatura") == 0) {
@@ -521,7 +521,7 @@ void plot_CorrectedRatevsParameter(const char* filePath, const char* parameterNa
         // Se il parametro non corrisponde a nessuno dei precedenti, imposta un titolo generico
         graph->GetXaxis()->SetTitle(Form("%s", parameterName));
     }
-    graph->GetYaxis()->SetRangeUser(0, 16.2);
+    graph->GetYaxis()->SetRangeUser(4.1, 5);
 
 
     // Disegna lo scatter plot
@@ -537,7 +537,12 @@ void plot_CorrectedRatevsParameter(const char* filePath, const char* parameterNa
     // Estrai i parametri del fit
     double intercept = linearFit->GetParameter(0);
     double slope = linearFit->GetParameter(1);
+    double error_slope = linearFit->GetParError(1);
 
+    // Calcola la distanza sigma dallo zero
+    double sigma_distance = slope / error_slope; 
+    std::cout << "PARAMETRO: " << parameterName << std::endl;
+    std::cout << "Distanza sigma dallo zero: " << std::fixed << std::setprecision(3) << sigma_distance << std::endl;
 
     // Salva il canvas come immagine
     canvas->SaveAs(Form("/home/chris/SciamiEstesi/23_11_2023/plots/parametri_atmosferici/%s/channel_%s/channel_CorrectedRates%s.png", parameterName, channel, channel));
@@ -566,14 +571,16 @@ struct AtmosphericParameterInfo {
 
 void plot_AtmosphericParameter(const AtmosphericParameterInfo& info) {
     plot_CorrectedRatevsParameter(info.filePath, info.parameterName, info.channel, info.efficiency);
+    //plot_RatevsParameter(info.filePath, info.parameterName, info.channel);
+
 }
 
 
 int analisi(){
     TelescopeInfo telescopes[] = {
-        {"/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_canale_1_231123.txt", "1", 0.4},
-        {"/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_canale_2_231123.txt", "2", 0.3},
-        {"/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_canale_3_231123.txt", "3", 0.2}
+        {"/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_canale_1_231123.txt", "1", 0.35},
+        {"/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_canale_2_231123.txt", "2", 0.48},
+        {"/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_canale_3_231123.txt", "3", 0.75}
     };
 
     for (const auto& telescope : telescopes) {
@@ -598,21 +605,21 @@ int analisi(){
 
 
     AtmosphericParameterInfo temperatureInfos[] = {
-        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/temperatura/canale_1_231123/Rates_and_temperatura_canale_1_231123.txt", "temperatura", "1", 0.46},
-        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/temperatura/canale_2_231123/Rates_and_temperatura_canale_2_231123.txt", "temperatura", "2", 0.57},
-        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/temperatura/canale_3_231123/Rates_and_temperatura_canale_3_231123.txt", "temperatura", "3", 0.79}
+        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/temperatura/canale_1_231123/Rates_and_temperatura_canale_1_231123.txt", "temperatura", "1", 0.35},
+        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/temperatura/canale_2_231123/Rates_and_temperatura_canale_2_231123.txt", "temperatura", "2", 0.48},
+        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/temperatura/canale_3_231123/Rates_and_temperatura_canale_3_231123.txt", "temperatura", "3", 0.75}
     };
 
     AtmosphericParameterInfo pressureInfos[] = {
-        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/pressione/canale_1_231123/Rates_and_pressione_canale_1_231123.txt", "pressione", "1", 0.46},
-        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/pressione/canale_2_231123/Rates_and_pressione_canale_2_231123.txt", "pressione", "2", 0.57},
-        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/pressione/canale_3_231123/Rates_and_pressione_canale_3_231123.txt", "pressione", "3", 0.79}
+        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/pressione/canale_1_231123/Rates_and_pressione_canale_1_231123.txt", "pressione", "1", 0.35},
+        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/pressione/canale_2_231123/Rates_and_pressione_canale_2_231123.txt", "pressione", "2", 0.48},
+        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/pressione/canale_3_231123/Rates_and_pressione_canale_3_231123.txt", "pressione", "3", 0.75}
     };
 
     AtmosphericParameterInfo humidityInfos[] = {
-        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/umidità/canale_1_231123/Rates_and_umidità_canale_1_231123.txt", "umidità", "1", 0.46},
-        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/umidità/canale_2_231123/Rates_and_umidità_canale_2_231123.txt", "umidità", "2", 0.57},
-        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/umidità/canale_3_231123/Rates_and_umidità_canale_3_231123.txt", "umidità", "3", 0.79}
+        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/umidità/canale_1_231123/Rates_and_umidità_canale_1_231123.txt", "umidità", "1", 0.35},
+        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/umidità/canale_2_231123/Rates_and_umidità_canale_2_231123.txt", "umidità", "2", 0.48},
+        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/umidità/canale_3_231123/Rates_and_umidità_canale_3_231123.txt", "umidità", "3", 0.75}
     };
 
     for (const auto& info : temperatureInfos) {
