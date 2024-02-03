@@ -35,7 +35,7 @@ std::vector<double> loadFiles(const char* filePath){
 
 
 
-void createErrorGraph(const TH1F* histogram, const char* channel) {
+void createErrorGraph(const TH1F* histogram, const char* channel, double efficiency) {
     // Crea vettori per i dati del grafico a errori
     std::vector<double> timesVec;
     std::vector<double> bins_Content;
@@ -51,11 +51,11 @@ void createErrorGraph(const TH1F* histogram, const char* channel) {
         double error = std::sqrt(binContent) / binWidth;
         double err_x = binWidth / 2;
 
-        timesVec.push_back(histogram->GetBinCenter(i));
+        timesVec.push_back(histogram->GetBinCenter(i)/3600);
         bins_Content.push_back(binContent);
         rates.push_back(rate);
         errors.push_back(error);
-        timeErrors.push_back(err_x);
+        timeErrors.push_back(err_x/3600);
 
     }
     
@@ -68,6 +68,11 @@ void createErrorGraph(const TH1F* histogram, const char* channel) {
     }
 
     */  
+    //CORREZIONE CON EFFICIENZA
+        for (size_t i = 0; i < rates.size(); ++i) {
+        rates[i] *= efficiency;
+        errors[i] *= efficiency;
+    }
     // Crea il grafico a errori
     TGraphErrors graphErrors(timesVec.size(), &timesVec[0], &rates[0], &timeErrors[0], &errors[0]);
     // Esegui il fit con una retta
@@ -77,7 +82,7 @@ void createErrorGraph(const TH1F* histogram, const char* channel) {
     // Imposta gli stili del grafico a errori
     graphErrors.SetMarkerStyle(20);
     graphErrors.SetMarkerSize(0.01);
-    graphErrors.SetTitle("Rate vs Tempi; Tempi [s]; Rate [mHz]"); //Aggiusta mHz se moltiplichi i dato per un fattore 1000
+    graphErrors.SetTitle("Rate vs Tempi; Tempi [h] in bins di 3600 s; Rate [Hz]"); //Aggiusta mHz se moltiplichi i dato per un fattore 1000
     // Calcola la media dei valori sull'asse y del grafico
     double meanY = 0.0;
     double cont_bin = 0.0;
@@ -114,7 +119,7 @@ void createErrorGraph(const TH1F* histogram, const char* channel) {
     stats->SetFillColor(0);
     stats->SetTextAlign(12);
     stats->SetTextSize(0.025);
-    stats->AddText(Form(("Rate medio [mHz]:")));
+    stats->AddText(Form(("Rate medio [Hz]:")));
     stats->AddText(Form("%.3f $\\pm$ %.3f$", meanY, err_meanY));    //ricorda di moltiplicare *1000 quando fai le coincidenze tra telescopi per portare il rate in mHz 
     //stats->AddText(Form("Intercept: %.3f", fitFunction->GetParameter(1)));    
     //stats->AddText(Form("Slope: %.3f", fitFunction->GetParameter(0)));    
@@ -124,7 +129,7 @@ void createErrorGraph(const TH1F* histogram, const char* channel) {
     stats->Draw("same");     // Disegna il box statistico sopra il grafico
 
     // Salva il canvas
-    canvasError.SaveAs(Form("/home/chris/SciamiEstesi/23_11_2023/plots/channel_%s/Rate.png", channel));
+    canvasError.SaveAs(Form("/home/chris/SciamiEstesi/23_11_2023/plots/channel_%s/Rate_corrected_with_efficiency.png", channel));
 }
 
 void plot_histogram2D(const TH1F* histogram, const char* channel){
@@ -196,26 +201,35 @@ void plotHistogram_Rate(const TH1F* histogram, const char* channel) {
 }
 
 
-void plot_histogram(const char* filePath, const char* channel) {
+void plot_histogram(const char* filePath, const char* channel, double efficiency) {
     std::vector<double> time = loadFiles(filePath);
     if (time.empty()) {
         std::cerr << "Nessun dato da caricare. Uscita." << std::endl;
         return;
     }
-
+/*
+    // Convert times from seconds to hours
+    for (size_t i = 0; i < time.size(); ++i) {
+        time[i] /= 3600.0;
+    }
+*/
     double lastValue = time.back();
-    const double binWidth = 10;
+    const double binWidth = 3600.0;
     const int numBins = static_cast<int>(std::ceil(lastValue / binWidth));
 
-    TH1F histogram("histogram", "Histogram", numBins, 0., lastValue);
+    TH1F histogram("histogram", "Istogramma dei tempi in cui un evento viene registrato", numBins, 0., lastValue);
     // Imposta lo stile dell'istogramma
-    histogram.SetLineColor(kBlue);
-    histogram.SetFillColor(kBlue);
+    //histogram.SetLineColor(kBlue);
+    //histogram.SetFillColor(kBlue);
     histogram.SetLineWidth(2);
+    histogram.SetFillStyle(4050);
+
 
     for (size_t i = 0; i < time.size(); ++i) {
         histogram.Fill(time[i]);
     }
+    histogram.GetYaxis()->SetTitle("Eventi");
+    histogram.GetXaxis()->SetTitle("Tempi [h] in bins di 1 h");
 
     // Creazione di un canvas per visualizzare l'istogramma
     TCanvas canvasH1("canvas", "Canvas", 800, 600);
@@ -225,7 +239,7 @@ void plot_histogram(const char* filePath, const char* channel) {
     canvasH1.Draw();
     canvasH1.SaveAs(Form("/home/chris/SciamiEstesi/23_11_2023/plots/channel_%s/histogram1D.png", channel));
 
-    createErrorGraph(&histogram, channel);
+    createErrorGraph(&histogram, channel, efficiency);
     plot_histogram2D(&histogram, channel);
     plotHistogram_Rate(&histogram, channel);
 }
@@ -372,6 +386,7 @@ void calculateAndPlotDiffCoinc(const char* fileName, const char* channel) {
 void plot_RatevsParameter(const char* filePath, const char* parameterName, const char* channel) {
     // Disabilita la casella delle statistiche di default
     //gStyle->SetOptFit(0);
+    gStyle->SetOptFit(0111); 
     // Regola le dimensioni della casella delle statistiche
     gStyle->SetStatW(0.1);
     gStyle->SetStatH(0.1);
@@ -397,26 +412,27 @@ void plot_RatevsParameter(const char* filePath, const char* parameterName, const
     // Creazione di un TCanvas per il plot
     TCanvas *canvas = new TCanvas("Canvas", Form("Rates vs %s", parameterName), 800, 600);
     canvas->SetGrid();
+    
 
-    // Creazione di un TGraphErrors per lo scatter plot
+    // Creazione di un TGraphErrors per lo scatter plot con rate NON corretti
     TGraphErrors *graph = new TGraphErrors(parameter_values.size(), &parameter_values[0], &rates[0], 0, &y_errors[0]);
     graph->SetMarkerStyle(20);
     graph->SetMarkerSize(0.25);
     graph->SetMarkerColor(kBlue);
-    graph->SetTitle(Form("Rates vs  %s", parameterName));
+    graph->SetTitle(Form("Rates vs %s", parameterName));
     graph->GetYaxis()->SetTitle("Rate [Hz]");
     // Imposta il titolo sull'asse x in base al tipo di parametro
-    if (strcmp(parameterName, "Temperature") == 0) {
+    if (strcmp(parameterName, "temeperatura") == 0) {
     graph->GetXaxis()->SetTitle(Form("Temperature [%cC]", 0xB0));
-    } else if (strcmp(parameterName, "Pressure") == 0) {
+    } else if (strcmp(parameterName, "pressione") == 0) {
         graph->GetXaxis()->SetTitle("Pressure [mbar]");
-    } else if (strcmp(parameterName, "Humidity") == 0) {
+    } else if (strcmp(parameterName, "umidità") == 0) {
         graph->GetXaxis()->SetTitle("Humidity [%]");
     } else {
         // Se il parametro non corrisponde a nessuno dei precedenti, imposta un titolo generico
         graph->GetXaxis()->SetTitle(Form("%s", parameterName));
     }
-    graph->GetYaxis()->SetRangeUser(0, 17);
+    graph->GetYaxis()->SetRangeUser(14.4, 16.2);
 
 
     // Disegna lo scatter plot
@@ -424,7 +440,9 @@ void plot_RatevsParameter(const char* filePath, const char* parameterName, const
 
     // Creazione di una funzione lineare per il fit
     TF1 *linearFit = new TF1("linearFit", "[0] + [1]*x", *std::min_element(parameter_values.begin(), parameter_values.end()), *std::max_element(parameter_values.begin(), parameter_values.end()));
-
+    // Imposta i nomi dei parametri
+    linearFit->SetParName(0, "Intercept");
+    linearFit->SetParName(1, "Slope");
     // Esegui il fit
     graph->Fit("linearFit", "R");
     // Estrai i parametri del fit
@@ -441,64 +459,175 @@ void plot_RatevsParameter(const char* filePath, const char* parameterName, const
 
 }
 
+
+
+void plot_CorrectedRatevsParameter(const char* filePath, const char* parameterName, const char* channel, double efficiency) {
+    // Disabilita la casella delle statistiche di default
+    //gStyle->SetOptFit(0);
+    gStyle->SetOptFit(0111); 
+    // Regola le dimensioni della casella delle statistiche
+    gStyle->SetStatW(0.1);
+    gStyle->SetStatH(0.1);
+   
+    // Carica i dati dal file
+    std::ifstream infile(filePath);
+
+    if (!infile.is_open()) {
+        std::cerr << "Errore nell'apertura del file: " << filePath << std::endl;
+        return;
+    }
+
+    std::vector<double> parameter_values, rates, y_errors;
+
+    double parameter_value, rate;
+    while (infile >> parameter_value >> rate) {
+        parameter_values.push_back(parameter_value);
+        rates.push_back(rate);
+        y_errors.push_back(std::sqrt(rate*300)/300);
+    }
+
+    infile.close();
+    //CORREZIONE CON EFFICIENZA
+    std::vector<double> rates_corrected, errors_corrected;
+
+ 
+        for (size_t i = 0; i < rates.size(); ++i) {
+        double corrected_rate = rates[i] * efficiency;
+        double corrected_error = y_errors[i] * efficiency;
+        rates_corrected.push_back(corrected_rate);
+        errors_corrected.push_back(corrected_error);
+    }
+
+    // Creazione di un TCanvas per il plot
+    TCanvas *canvas = new TCanvas("Canvas", Form("Rates vs %s", parameterName), 800, 600);
+    canvas->SetGrid();
+    
+
+    // Creazione di un TGraphErrors per lo scatter plot con rate NON corretti
+    TGraphErrors *graph = new TGraphErrors(parameter_values.size(), &parameter_values[0], &rates_corrected[0], 0, &errors_corrected[0]);
+    graph->SetMarkerStyle(20);
+    graph->SetMarkerSize(0.25);
+    graph->SetMarkerColor(kBlue);
+    graph->SetTitle(Form("Corrected rates vs %s", parameterName));
+    graph->GetYaxis()->SetTitle("Rate [Hz]");
+    // Imposta il titolo sull'asse x in base al tipo di parametro
+    if (strcmp(parameterName, "temeperatura") == 0) {
+    graph->GetXaxis()->SetTitle(Form("Temperature [%cC]", 0xB0));
+    } else if (strcmp(parameterName, "pressione") == 0) {
+        graph->GetXaxis()->SetTitle("Pressure [mbar]");
+    } else if (strcmp(parameterName, "umidità") == 0) {
+        graph->GetXaxis()->SetTitle("Humidity [%]");
+    } else {
+        // Se il parametro non corrisponde a nessuno dei precedenti, imposta un titolo generico
+        graph->GetXaxis()->SetTitle(Form("%s", parameterName));
+    }
+    graph->GetYaxis()->SetRangeUser(0, 16.2);
+
+
+    // Disegna lo scatter plot
+    graph->Draw("AP");
+
+    // Creazione di una funzione lineare per il fit
+    TF1 *linearFit = new TF1("linearFit", "[0] + [1]*x", *std::min_element(parameter_values.begin(), parameter_values.end()), *std::max_element(parameter_values.begin(), parameter_values.end()));
+    // Imposta i nomi dei parametri
+    linearFit->SetParName(0, "Intercept");
+    linearFit->SetParName(1, "Slope");
+    // Esegui il fit
+    graph->Fit("linearFit", "R");
+    // Estrai i parametri del fit
+    double intercept = linearFit->GetParameter(0);
+    double slope = linearFit->GetParameter(1);
+
+
+    // Salva il canvas come immagine
+    canvas->SaveAs(Form("/home/chris/SciamiEstesi/23_11_2023/plots/parametri_atmosferici/%s/channel_%s/channel_CorrectedRates%s.png", parameterName, channel, channel));
+    // Rilascia la memoria
+    delete linearFit;
+    delete graph;
+    delete canvas;
+
+
+}
+
+
+
+struct TelescopeInfo {
+    const char* filePath;
+    const char* channel;
+    double efficiency;
+};
+
+struct AtmosphericParameterInfo {
+    const char* filePath;
+    const char* parameterName;
+    const char* channel;
+    double efficiency;
+};
+
+void plot_AtmosphericParameter(const AtmosphericParameterInfo& info) {
+    plot_CorrectedRatevsParameter(info.filePath, info.parameterName, info.channel, info.efficiency);
+}
+
+
 int analisi(){
-    const char* files[] = {
-        "/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_canale_1_231123.txt",
-        "/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_canale_2_231123.txt",
-        "/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_canale_3_231123.txt"
+    TelescopeInfo telescopes[] = {
+        {"/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_canale_1_231123.txt", "1", 0.4},
+        {"/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_canale_2_231123.txt", "2", 0.3},
+        {"/home/chris/SciamiEstesi/23_11_2023/data/clean_data/tempi_corretti_canale_3_231123.txt", "3", 0.2}
     };
 
-    for (int i = 0; i < 3; i++) {
-
-        // Chiamare le funzioni con le stringhe risultanti
-        plot_histogram(files[i], std::to_string(i + 1).c_str());
-        plotTimeDifferences(files[i], std::to_string(i + 1).c_str());
+    for (const auto& telescope : telescopes) {
+        plot_histogram(telescope.filePath, telescope.channel, telescope.efficiency);
+        plotTimeDifferences(telescope.filePath, telescope.channel);
     }
-    //COINCIDENZE TELESCOPI 123
-    const char* filePathCoinc123 = "/home/chris/SciamiEstesi/23_11_2023/data/concidence_data/coincidenze_triple_231123.txt"; 
-    plot_histogram(filePathCoinc123, "123");
-    //COINCIDENZE DUE TELESCOPI 23
-    const char* filePathCoinc23 = "/home/chris/SciamiEstesi/23_11_2023/data/concidence_data/coincidenze_doppie23_231123.txt"; 
-    plot_histogram(filePathCoinc23, "23");
-    calculateAndPlotDiffCoinc(filePathCoinc23, "23");
-    //COINCIDENZE DUE TELESCOPI 13
-    const char* filePathCoinc13 = "/home/chris/SciamiEstesi/23_11_2023/data/concidence_data/coincidenze_doppie13_231123.txt"; 
-    plot_histogram(filePathCoinc13, "13");
-    calculateAndPlotDiffCoinc(filePathCoinc13, "13");
 
-    // PARAMETRI ATMOFERICI
-        //TEMPERATURA
-            //CANALE1
-    const char* filePathTemperature_ch1 = "/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/temperatura/canale_1_231123/Rates_and_temperatura_canale_1_231123.txt";
-    plot_RatevsParameter(filePathTemperature_ch1, "temperatura", "1");
-            //CANALE2
-    const char* filePathTemperature_ch2 = "/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/temperatura/canale_2_231123/Rates_and_temperatura_canale_2_231123.txt";
-    plot_RatevsParameter(filePathTemperature_ch2, "temperatura", "2");
-            //CANALE3
-    const char* filePathTemperature_ch3 = "/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/temperatura/canale_3_231123/Rates_and_temperatura_canale_3_231123.txt";
-    plot_RatevsParameter(filePathTemperature_ch3, "temperatura", "3");   
+    const char* coincidences[] = {
+        "/home/chris/SciamiEstesi/23_11_2023/data/concidence_data/coincidenze_triple_231123.txt",
+        "/home/chris/SciamiEstesi/23_11_2023/data/concidence_data/coincidenze_doppie23_231123.txt",
+        "/home/chris/SciamiEstesi/23_11_2023/data/concidence_data/coincidenze_doppie13_231123.txt"
+    };
 
-        //PRESSIONE
-            //CANALE1
-    const char* filePathPressure_ch1 = "/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/pressione/canale_1_231123/Rates_and_pressione_canale_1_231123.txt";
-    plot_RatevsParameter(filePathPressure_ch1, "pressione", "1");
-            //CANALE2
-    const char* filePathPressure_ch2 = "/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/pressione/canale_2_231123/Rates_and_pressione_canale_2_231123.txt";
-    plot_RatevsParameter(filePathPressure_ch2, "pressione", "2");
-            //CANALE3
-    const char* filePathPressure_ch3 = "/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/pressione/canale_3_231123/Rates_and_pressione_canale_3_231123.txt";
-    plot_RatevsParameter(filePathPressure_ch3, "pressione", "3");
- 
-        //UMIDITA'
-            //CANALE1
-    const char* filePathHumidity_ch1 = "/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/umidità/canale_1_231123/Rates_and_umidità_canale_1_231123.txt";
-    plot_RatevsParameter(filePathHumidity_ch1, "umidità", "1");
-            //CANALE2
-    const char* filePathHumidity_ch2 = "/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/umidità/canale_2_231123/Rates_and_umidità_canale_2_231123.txt";
-    plot_RatevsParameter(filePathHumidity_ch2, "umidità", "2");
-            //CANALE3
-    const char* filePathHumidity_ch3 = "/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/umidità/canale_3_231123/Rates_and_umidità_canale_3_231123.txt";
-    plot_RatevsParameter(filePathHumidity_ch3, "umidità", "3");
-    std::cout<<"TERMINAZIONE SCRIPT"<<std::endl;
+    const char* channels[] = {"123", "23", "13"};
+    double efficiencies[] = {0.2, 0.3, 0.4};
+
+    for (size_t i = 0; i < 3; ++i) {
+        plot_histogram(coincidences[i], channels[i], efficiencies[i]);
+        calculateAndPlotDiffCoinc(coincidences[i], channels[i]);
+    }
+
+
+
+    AtmosphericParameterInfo temperatureInfos[] = {
+        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/temperatura/canale_1_231123/Rates_and_temperatura_canale_1_231123.txt", "temperatura", "1", 0.46},
+        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/temperatura/canale_2_231123/Rates_and_temperatura_canale_2_231123.txt", "temperatura", "2", 0.57},
+        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/temperatura/canale_3_231123/Rates_and_temperatura_canale_3_231123.txt", "temperatura", "3", 0.79}
+    };
+
+    AtmosphericParameterInfo pressureInfos[] = {
+        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/pressione/canale_1_231123/Rates_and_pressione_canale_1_231123.txt", "pressione", "1", 0.46},
+        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/pressione/canale_2_231123/Rates_and_pressione_canale_2_231123.txt", "pressione", "2", 0.57},
+        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/pressione/canale_3_231123/Rates_and_pressione_canale_3_231123.txt", "pressione", "3", 0.79}
+    };
+
+    AtmosphericParameterInfo humidityInfos[] = {
+        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/umidità/canale_1_231123/Rates_and_umidità_canale_1_231123.txt", "umidità", "1", 0.46},
+        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/umidità/canale_2_231123/Rates_and_umidità_canale_2_231123.txt", "umidità", "2", 0.57},
+        {"/home/chris/SciamiEstesi/23_11_2023/data/parametri_atmosferici/umidità/canale_3_231123/Rates_and_umidità_canale_3_231123.txt", "umidità", "3", 0.79}
+    };
+
+    for (const auto& info : temperatureInfos) {
+        plot_AtmosphericParameter(info);
+    }
+
+    for (const auto& info : pressureInfos) {
+        plot_AtmosphericParameter(info);
+    }
+
+    for (const auto& info : humidityInfos) {
+        plot_AtmosphericParameter(info);
+    }
+
+    std::cout << "TERMINAZIONE SCRIPT" << std::endl;
+
     return 0;
 }

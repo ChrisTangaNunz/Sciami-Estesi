@@ -61,10 +61,10 @@ print('Dimesione array dei tempi non corretti:', len(original_time))
 # Plot dell'original_time
 plt.plot(original_time, label='Original Time')
 plt.xlabel('Indice')
-plt.ylabel('Tempi Non Corretti')
+plt.ylabel('Tempi Non Corretti [s]')
 plt.xlim(0, 0.2e6)  # Imposta i limiti sull'asse x
 
-plt.title('Original Time vs Index')
+plt.title('Tempi Non Corretti ')
 plt.savefig(f'/home/chris/SciamiEstesi/23_11_2023/plots/grafico_tempi_non_corretti.png')
 
 plt.scatter(range(len(tempi_canale_1)), tempi_canale_1, label='Canale 1')
@@ -72,10 +72,11 @@ plt.scatter(range(len(tempi_canale_2)), tempi_canale_2, label='Canale 2')
 plt.scatter(range(len(tempi_canale_3)), tempi_canale_3, label='Canale 3')
 
 plt.xlabel('Indice')
-plt.ylabel('Tempi Corretti')
+plt.ylabel('Tempi Corretti [s]')
 plt.legend()
-plt.title('Tempi Corretti vs Indice')
-plt.xlim(0, len(tempi_canale_1))  # Imposta i limiti sull'asse x
+plt.title('Tempi Corretti')
+plt.xlim(0, 75000 )  # Imposta i limiti sull'asse x
+plt.ylim(0, 10000 )  # Imposta i limiti sull'asse x
 
 
 plt.savefig(f'/home/chris/SciamiEstesi/23_11_2023/plots/grafico_tempi_Corretti.png')
