@@ -169,25 +169,33 @@ void plot_histogram2D(const TH1F* histogram, const char* channel){
 
 void plotHistogram_Rate(const TH1F* histogram, const char* channel) {
 
-    TH1F *rateHistogram = new TH1F("rateHistogram", "Istogramma del Rate;Conteggi;Occorrenze", 100, 0, 200);
+    TH1F *rateHistogram = new TH1F("rateHistogram", "Istogramma del Rate;Conteggi in #Deltat di 10 s;Occorrenze", 100, 0, 200);
     for (int i = 1; i <= histogram->GetNbinsX(); ++i) {
         double binContent = histogram->GetBinContent(i);
         rateHistogram->Fill(binContent);
     }
 
     //Imposta correttamente il range dell'asse x
-    //rateHistogram->GetXaxis()->SetRangeUser(100, 200);
+    rateHistogram->GetXaxis()->SetRangeUser(100, 200);
 
     // Fai il fit della distribuzione poissoniana
     TF1 *poissonFit = new TF1("poissonFit", "[0]*TMath::Poisson(x, [1])", 0, 200);
     poissonFit->SetParameters(10, 10);  // Parametri iniziali per il fit
-
+    // Rinomina i parametri del fit
+    poissonFit->SetParName(0, "N");
+    poissonFit->SetParName(1, "#mu");
     // Esegui il fit dell'istogramma del rate
     rateHistogram->Fit("poissonFit", "L");
+
     // Crea un terzo canvas per l'istogramma del rate
     TCanvas *canvasRate = new TCanvas("canvasRate", "Istogramma del Rate", 800, 600);
     // Disegna l'istogramma del rate
     rateHistogram->Draw();
+    // Abilita la visualizzazione delle informazioni del fit nel box statistico
+    gPad->Update(); // Aggiorna il pad prima di ottenere il riferimento alla funzione di fit
+    TPaveStats *stats = (TPaveStats*)rateHistogram->FindObject("stats");
+    stats->SetOptFit(1111);
+
 
     canvasRate->SaveAs(Form("/home/chris/SciamiEstesi/23_11_2023/plots/channel_%s/RateHistogram.png", channel));
 
@@ -214,7 +222,7 @@ void plot_histogram(const char* filePath, const char* channel, double efficiency
     }
 */
     double lastValue = time.back();
-    const double binWidth = 3600.0;
+    const double binWidth = 10.0;
     const int numBins = static_cast<int>(std::ceil(lastValue / binWidth));
 
     TH1F histogram("histogram", "Istogramma dei tempi in cui un evento viene registrato", numBins, 0., lastValue);
