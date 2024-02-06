@@ -168,19 +168,34 @@ void plot_histogram2D(const TH1F* histogram, const char* channel){
 }
 
 void plotHistogram_Rate(const TH1F* histogram, const char* channel) {
-
+  
     TH1F *rateHistogram = new TH1F("rateHistogram", "Istogramma del Rate;Conteggi in #Deltat di 10 s;Occorrenze", 100, 0, 200);
+    double sum = 0.0;
+    double sumSquared = 0.0;
+
     for (int i = 1; i <= histogram->GetNbinsX(); ++i) {
         double binContent = histogram->GetBinContent(i);
+        //binContent *= efficiency; Ricordatii di aggiungere , double efficiency tra gli argomenenti della funzione
+        sum += binContent;
+        sumSquared += binContent * binContent;
         rateHistogram->Fill(binContent);
     }
+    // Calcola la media dei dati 
+    double mean = sum / rateHistogram->GetEntries();
+    //Calcola l'errore sulla media dei dati
+    double errorOnMean = mean / sqrt(rateHistogram->GetEntries());
+    // Calcola la deviazione standard dei dati
+    double stdev = sqrt((sumSquared / rateHistogram->GetEntries() - mean * mean));
+    //Calcola l'errore della deviazione standard dei dati
+    double err_stdev = stdev / sqrt(2 * rateHistogram->GetEntries());
+
 
     //Imposta correttamente il range dell'asse x
-    rateHistogram->GetXaxis()->SetRangeUser(100, 200);
+    rateHistogram->GetXaxis()->SetRangeUser(100, 205);
 
     // Fai il fit della distribuzione poissoniana
     TF1 *poissonFit = new TF1("poissonFit", "[0]*TMath::Poisson(x, [1])", 0, 200);
-    poissonFit->SetParameters(10, 10);  // Parametri iniziali per il fit
+    poissonFit->SetParameters(61310, 45);  // Parametri iniziali per il fit
     // Rinomina i parametri del fit
     poissonFit->SetParName(0, "N");
     poissonFit->SetParName(1, "#mu");
@@ -195,7 +210,12 @@ void plotHistogram_Rate(const TH1F* histogram, const char* channel) {
     gPad->Update(); // Aggiorna il pad prima di ottenere il riferimento alla funzione di fit
     TPaveStats *stats = (TPaveStats*)rateHistogram->FindObject("stats");
     stats->SetOptFit(1111);
+    // Imposta la precisione desiderata per la stampa dei parametri del fit
+    stats->SetOptStat(1111); // 1111 consente di visualizzare la funzione, i parametri e le statistiche con le opzioni desiderate
+    gStyle->SetOptStat(1111); // Assicurati che la formattazione sia applicata anche a livello di stile globale
 
+    // Imposta la precisione dei parametri del fit nel formato "N.F" (N cifre totali, F cifre decimali)
+    stats->SetFitFormat("5.4f"); // Modifica 5 e 4 secondo le tue esigenze di precisione
 
     canvasRate->SaveAs(Form("/home/chris/SciamiEstesi/23_11_2023/plots/channel_%s/RateHistogram.png", channel));
 
@@ -203,8 +223,15 @@ void plotHistogram_Rate(const TH1F* histogram, const char* channel) {
     // Estrai i parametri del fit
     double fitMean = poissonFit->GetParameter(1);
     double fitMeanError = poissonFit->GetParError(1);
-    // Stampa i risultati del fit
-    std::cout << "Fit Mean: " << fitMean << " +/- " << fitMeanError << std::endl;
+    double fitVariance = sqrt(fitMean);
+    double erroritVariance = fitMeanError/(2*(sqrt(fitMean)));
+
+    std::cout<< "Histogram RATE CHANNEL: "<< channel << std::endl;
+    // Stampa i risultati del fit.
+    std::cout << "Data Mean: " << mean << " +/- " << errorOnMean << std::endl;
+    std::cout << "Fit Mean #mu: " << fitMean << " +/- " << fitMeanError << std::endl;
+    std::cout << "Fit Variance: " << fitVariance << " +/- " << erroritVariance << std::endl;
+    std::cout << "Standard Deviation: " << stdev << " +/- " << err_stdev << std::endl;
 
 }
 
@@ -249,7 +276,7 @@ void plot_histogram(const char* filePath, const char* channel, double efficiency
 
     createErrorGraph(&histogram, channel, efficiency);
     plot_histogram2D(&histogram, channel);
-    plotHistogram_Rate(&histogram, channel);
+    plotHistogram_Rate(&histogram, channel); //Ricordati di aggiungere efficency tra gli argomenti della funzione nel caso
 }
 
 
@@ -276,7 +303,7 @@ void plotTimeDifferences(const char* filePath, const char* channel) {
     calculateTimeDifferences(filePath, timeDifferences);
 
     // Crea un istogramma delle differenze di tempo
-    TH1F *timeDifferenceHistogram = new TH1F("timeDifferenceHistogram", "Differenze di tempo;Differenze di tempo [s];Occorrenze", 100, 0, 1.5);
+    TH1F *timeDifferenceHistogram = new TH1F("timeDifferenceHistogram", "Differenze di tempo;Differenze di tempo [s];Occorrenze", 100, 0, 1.2);
 
     // Riempie l'istogramma con le differenze di tempo
     for (const auto& deltaTime : timeDifferences) {
@@ -293,12 +320,15 @@ void plotTimeDifferences(const char* filePath, const char* channel) {
     // Fai il fit dell'istogramma delle differenze di tempo con una funzione esponenziale
     TF1 *exponentialFit = new TF1("exponentialFit", "[0]*exp(-[1]*x)", 0, 1.5);
     exponentialFit->SetParameters(100, 1);  // Parametri iniziali per il fit
-
+    exponentialFit->SetParName(0, "N");
+    exponentialFit->SetParName(1, "#lambda");
     timeDifferenceHistogram->Fit("exponentialFit", "L");
 
     // Estrai i parametri del fit
     double fitAmplitude = exponentialFit->GetParameter(0);
     double fitDecay = exponentialFit->GetParameter(1);
+    double fitDecayError = exponentialFit->GetParError(1);
+
 
     // Stampa i risultati del fit
     std::cout << "Fit Amplitude: " << fitAmplitude << std::endl;
@@ -308,25 +338,52 @@ void plotTimeDifferences(const char* filePath, const char* channel) {
     TCanvas *canvasTimeDifferences = new TCanvas("canvasTimeDifferences", "Istogramma delle differenze di tempo", 800, 600);
     timeDifferenceHistogram->Draw();
 
+    // Abilita la visualizzazione delle informazioni del fit nel box statistico
+    gPad->Update(); // Aggiorna il pad prima di ottenere il riferimento alla funzione di fit
+    TPaveStats *statsNonLog = (TPaveStats*)timeDifferenceHistogram->FindObject("stats");
+    statsNonLog->SetOptFit(1111);
+    // Imposta la precisione desiderata per la stampa dei parametri del fit
+    statsNonLog->SetOptStat(1111); // 1111 consente di visualizzare la funzione, i parametri e le statistiche con le opzioni desiderate
+    gStyle->SetOptStat(1111); // Assicurati che la formattazione sia applicata anche a livello di stile globale
+
+    // Imposta la precisione dei parametri del fit nel formato "N.F" (N cifre totali, F cifre decimali)
+    statsNonLog->SetFitFormat("5.4f"); // Modifica 5 e 4 secondo le tue esigenze di precisione
+
     canvasTimeDifferences->SaveAs(Form("/home/chris/SciamiEstesi/23_11_2023/plots/channel_%s/TimeDifferences.png", channel));
     // Crea un secondo canvas con scala logaritmica per l'asse delle y
     TCanvas *canvasLogScale = new TCanvas("canvasLogScale", "Istogramma con scala logaritmica", 800, 600);
     gPad->SetLogy();
     timeDifferenceHistogram->Draw();
+    // Abilita la visualizzazione delle informazioni del fit nel box statistico
+    gPad->Update(); // Aggiorna il pad prima di ottenere il riferimento alla funzione di fit
+    TPaveStats *stats = (TPaveStats*)timeDifferenceHistogram->FindObject("stats");
+    stats->SetOptFit(1111);
+    // Imposta la precisione desiderata per la stampa dei parametri del fit
+    stats->SetOptStat(1111); // 1111 consente di visualizzare la funzione, i parametri e le statistiche con le opzioni desiderate
+    gStyle->SetOptStat(1111); // Assicurati che la formattazione sia applicata anche a livello di stile globale
+
+    // Imposta la precisione dei parametri del fit nel formato "N.F" (N cifre totali, F cifre decimali)
+    stats->SetFitFormat("5.4f"); // Modifica 5 e 4 secondo le tue esigenze di precisione
 
     // Fai il fit con una funzione esponenziale
     TF1 *expFitLogScale = new TF1("expFitLogScale", "[0]*exp(-[1]*x)", 0, 3);
     expFitLogScale->SetParameters(fitAmplitude, fitDecay);  // Usa i parametri del fit precedente come iniziali
-
+    expFitLogScale->SetParName(0, "N");
+    expFitLogScale->SetParName(1, "#lambda");
     timeDifferenceHistogram->Fit("expFitLogScale", "L");
 
     // Estrai i parametri del nuovo fit
     double fitAmplitudeLogScale = expFitLogScale->GetParameter(0);
     double fitDecayLogScale = expFitLogScale->GetParameter(1);
+    double fitDecayLogScaleError = expFitLogScale->GetParError(1);
+    double tauFit = 1 / fitDecayLogScale;
+    double error_tauFit  = fitDecayLogScaleError / std::pow(fitDecayLogScale, 2);
 
     // Stampa i risultati del nuovo fit
-    std::cout << "Fit Amplitude (log scale): " << fitAmplitudeLogScale << std::endl;
-    std::cout << "Fit Decay (log scale): " << fitDecayLogScale << std::endl;
+    std::cout << "Risultati Distribuzione temporale del Delta t tra due eventi successi nel CANALE: " << channel << std::endl;
+    std::cout << "Fit Decay (log scale) #lambda: " << fitDecayLogScale << " +/- " << fitDecayLogScaleError << std::endl;
+    std::cout << "Tau fit: " << tauFit << " +/- " << error_tauFit << std::endl;
+
 
 
     canvasLogScale->SaveAs(Form("/home/chris/SciamiEstesi/23_11_2023/plots/channel_%s/TimeDifferences_LogScale.png", channel));
